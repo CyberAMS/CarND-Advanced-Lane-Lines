@@ -35,7 +35,7 @@ Everything has been programmed in Python 3.
 
 ## 1. Camera Calibration
 
-### 1. Distortion correction based on several test images
+### i. Distortion correction based on several test images
 
 The camera calibration was done using the function `camera_calibration` in the notebook `180728d_StAn_AdvLaneFinding`.
 
@@ -45,9 +45,9 @@ An example of the output is shown in the following picture:
 
 ![alt text][image1]
 
-## 1. Pipeline (single images)
+## 2. Pipeline (single images)
 
-### 1. Distortion correction of actual image
+### i. Distortion correction of actual image
 
 The distortion correction of the actual images is done within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding`.
 
@@ -55,7 +55,7 @@ An example of an undistorted image is shown in the following picture:
 
 ![alt text][image2]
 
-### 2. Creation of thresholded binary image
+### ii. Creation of thresholded binary image
 
 The creation of a thresholded binary images is done within the function `create_binary_image` in the notebook `180728d_StAn_AdvLaneFinding`. All other functions mentioned in this section belong to the same notebook.
 
@@ -83,7 +83,7 @@ An example of a binary image for identifying white lane lines is shown in the fo
 
 ![alt text][image3]
 
-### 3. Identification and use of perspective transform
+### iii. Identification and use of perspective transform
 
 The perspective transform to birdseye view is determined in the function `camera2birdseyeview` in the notebook `180728d_StAn_AdvLaneFinding`.
 
@@ -103,7 +103,7 @@ dst = np.float32([[dstxmin, dstymax], [dstxmin, dstymin], [dstxmax, dstymin], [d
 
 The perspective transform is used within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding`. It generates a birdseye view of the road which is then used to create a thresholded binary image of the lane lines.
 
-### 4. Identification of lane line polynomials
+### iv. Identification of lane line polynomials
 
 The function `sliding_window_detect` in the notebook `180728d_StAn_AdvLaneFinding` looks for the start of lane lines in the lower left and right areas of the thresholded binary image of white and yellow lane lines. After this it follows the lane lines using a sliding window algorithm and stores the main line point for each window as shown in the following picture:
 
@@ -115,7 +115,7 @@ At the end it estimates the shape of the lane lines by fitting a polynomial thro
 
 This function is used within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding` and can either be called to reuse a previous polynomial to define the location of the sliding windows, to reuse the last starting positions of the lowest windows or to start without any previous information.
 
-### 5. Calculation of curvature and off center position
+### v. Calculation of curvature and off center position
 
 The calculation of lateral curvature of the lane `NewAllLines.radius_of_curvature` and off center position of the vehicle within the lane `potentialoffcenter` are done within the `sliding_window_detect` function in the notebook `180728d_StAn_AdvLaneFinding`.
 
@@ -143,7 +143,7 @@ The horizontal and vertical ratios between pixels and meters `xm_per_pix` and `y
 
 ---
 
-## Pipeline (video)
+## 3. Pipeline (video)
 
 Here is the final video output which has been generated using my code: 
 
@@ -153,7 +153,7 @@ Here's a [link to my video result](./output_images/output.mp4)
 
 ---
 
-## Discussion
+## 4. Discussion
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
