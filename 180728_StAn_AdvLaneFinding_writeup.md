@@ -29,7 +29,6 @@ Everything has been programmed in Python 3.
 [image4]: ./output_images/02c_perspective.png "Warp Example"
 [image5]: ./output_images/02d_line_detection.png "Fit Visual"
 [image6]: ./output_images/02d_poly_result.png "Output"
-[video1]: ./output_images/output.mp4 "Video"
 
 ---
 
@@ -51,13 +50,13 @@ An example of the output is shown in the following picture:
 
 The distortion correction of the actual images is done within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding`.
 
-An example of an undistorted image is shown in the following picture:
+An example of an undistorted image is shown in the following picture on the left side:
 
 ![alt text][image2]
 
 ### ii. Creation of thresholded binary image
 
-The creation of a thresholded binary images is done within the function `create_binary_image` in the notebook `180728d_StAn_AdvLaneFinding`. All other functions mentioned in this section belong to the same notebook.
+The creation of thresholded binary images is done within the function `create_binary_image` in the notebook `180728d_StAn_AdvLaneFinding`. All other functions mentioned in this section belong to the same notebook.
 
 This function is very flexible. It can apply thresholds on color, magnitude, sobel x, sobel y and the direction of the gradient of a picture. It can operate on gray scale or every color channel of the hls color space. The output of the individual threshold channels can be combined using `and` or `or`.
 
@@ -79,7 +78,7 @@ binary = cbi((binary_white, binary_yellow), bOR = True, bdisplay = bdisplay)
 
 The function `cbi` (combine binary image) allows to further combine the output of the `create_binary_image` function using `and` or `or`. It is used in the function `process_video_frame` to combine the thresholded binary images for white and yellow lane lines into a single thresholded binary image using `or`.
 
-An example of a binary image for identifying white lane lines is shown in the following picture:
+An example of a binary image for identifying white lane lines is shown in the following picture on the top right:
 
 ![alt text][image3]
 
@@ -111,7 +110,7 @@ The function `sliding_window_detect` in the notebook `180728d_StAn_AdvLaneFindin
 
 At the end it estimates the shape of the lane lines by fitting a polynomial through the detected line points. The resulting polynomials for left, right and all lane lines are then used in a mask that is transferred back to the original perspective and blended into the original image as shown in the following picture:
 
-![alt text][image5]
+![alt text][image6]
 
 This function is used within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding` and can either be called to reuse a previous polynomial to define the location of the sliding windows, to reuse the last starting positions of the lowest windows or to start without any previous information.
 
@@ -122,7 +121,8 @@ The calculation of lateral curvature of the lane `NewAllLines.radius_of_curvatur
 The curvature `NewAllLines.radius_of_curvature` is calculated using the following code where `all_curverad` is a vector containing the curvature at different vertical positions, `all_line_poly` is the polynomial of the average lane line, `line_y` are the vertical positions considered and `ym_per_pix` is the factor between pixels and meters:
 
 ```python
-all_curverad = ((1 + (2 * all_line_poly[0] * line_y * ym_per_pix + all_line_poly[1])**2)**1.5) / np.absolute(2 * all_line_poly[0])
+all_curverad = ((1 + (2 * all_line_poly[0] * line_y * ym_per_pix
+               + all_line_poly[1])**2)**1.5) / np.absolute(2 * all_line_poly[0])
 
 NewAllLines.radius_of_curvature = np.average(all_curverad)
 ```
@@ -145,16 +145,14 @@ The horizontal and vertical ratios between pixels and meters `xm_per_pix` and `y
 
 ## 3. Pipeline (video)
 
-Here is the final video output which has been generated using my code: 
-
-![alt text][video1]
-
 Here's a [link to my video result](./output_images/output.mp4)
 
 ---
 
 ## 4. Discussion
 
-#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+The selection of the best parameters to detect white and yellow lane lines was challenging, because they had to work reasonably well under varying conditions like shaded areas. Features like shaded concrete walls on the side of the lane were easily mistaken for lane lines due to the high contrast. The same accounts for any other patches on the road that extend in longitudinal direction.
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Highly illumiated sections or sections with no good visible lane lines at all were challenging. Taking the running average of the lane lines rather than the detected lane lines directly helped to smooth out some of these situations.
+
+Extremely curvy roads are too challenging for my current algorithm, because it assumes that lane lines mostly extend to the front. Also, the image quality and view of the camera is not good enough for these situations. Additional camera pictures looking to the left and right side could be merged with the forward facing camera to give a better field of view and with this allow a better prediction with a slightly adjusted algorithm that allows sliding windows to move more in lateral direction.
