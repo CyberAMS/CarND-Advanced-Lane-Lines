@@ -1,39 +1,158 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# Project: Advanced Lane Finding
 
+This project has been prepared by Andre Strobel.
 
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
+The goal of this project is to find a vehicle's lane in a video stream. The video stream has been recorded with a forward facing camera that is mounted to the vehicle. The detected lane is then used to estimate the lateral curvature of the road and the lateral off center position of the vehicle.
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+Everything has been programmed in Python 3.
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
 ---
 
-The goals / steps of this project are the following:
+## Content
 
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
+1. Camera Calibration
+    1. Distortion correction based on several test images
+1. Pipeline (test images)
+    1. Distortion correction of actual image
+    1. Creation of thresholded binary image
+    1. Identification and use of perspective transform
+    1. Identification of lane line polynomials
+    1. Calculation of curvature and off center position
+1. Pipeline (video)
+1. Discussion
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
+[//]: # (Image References)
 
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `output_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+[image1]: ./output_images/01_distortion.png "Distortion"
+[image2]: ./output_images/02a_undistorted_road.png  "Undistorted Road"
+[image3]: ./output_images/02b_binary.png "Binary Example"
+[image4]: ./output_images/02c_perspective.png "Warp Example"
+[image5]: ./output_images/02d_line_detection.png "Fit Visual"
+[image6]: ./output_images/02d_poly_result.png "Output"
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
+---
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
+## 1. Camera Calibration
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+### i. Distortion correction based on several test images
 
+The camera calibration was done using the function `camera_calibration` in the notebook `180728d_StAn_AdvLaneFinding`.
+
+I used the `cv2.findChessboardCorners` function with every test picture that showed the full chessboard pattern. This gave me the position of the chessboard corners in every test picture. I used `cv2.calibrateCamera` to get the distortion matrix and coefficients based on the detected chessboard corners of every test picture.
+
+An example of the output is shown in the following picture: 
+
+![alt text][image1]
+
+## 2. Pipeline (single images)
+
+### i. Distortion correction of actual image
+
+The distortion correction of the actual images is done within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding`.
+
+An example of an undistorted image is shown in the following picture on the left side:
+
+![alt text][image2]
+
+### ii. Creation of thresholded binary image
+
+The creation of thresholded binary images is done within the function `create_binary_image` in the notebook `180728d_StAn_AdvLaneFinding`. All other functions mentioned in this section belong to the same notebook.
+
+This function is very flexible. It can apply thresholds on color, magnitude, sobel x, sobel y and the direction of the gradient of a picture. It can operate on gray scale or every color channel of the hls color space. The output of the individual threshold channels can be combined using `and` or `or`.
+
+It is used within the function `process_video_frame` to identify white and yellow lane lines:
+
+```python
+binary_white = create_binary_image(warpedimage, bOR = False, 
+    bhls_l = True, hls_l_thresh = (180, 255),
+    bhls_l_sx = True, hls_l_sobel_kernel = 31, hls_l_sx_thresh = (20, 255),  
+    bdisplay = bdisplaydetails)
+    
+binary_yellow = create_binary_image(warpedimage, bOR = False, 
+    bhls_h = True, hls_h_thresh = (15, 70),
+    bhls_s_sx = True, hls_s_sobel_kernel = 31, hls_s_sx_thresh = (15, 255), 
+    bdisplay = bdisplaydetails)
+
+binary = cbi((binary_white, binary_yellow), bOR = True, bdisplay = bdisplay)
+```
+
+The function `cbi` (combine binary image) allows to further combine the output of the `create_binary_image` function using `and` or `or`. It is used in the function `process_video_frame` to combine the thresholded binary images for white and yellow lane lines into a single thresholded binary image using `or`.
+
+An example of a binary image for identifying white lane lines is shown in the following picture on the top right:
+
+![alt text][image3]
+
+### iii. Identification and use of perspective transform
+
+The perspective transform to birdseye view is determined in the function `camera2birdseyeview` in the notebook `180728d_StAn_AdvLaneFinding`.
+
+The necessary transformation is determined by a test picture with straight lane lines as shown in the following picture: 
+
+![alt text][image4]
+
+The corners of the green polygon were picked manually and used as source points. The destination points `dst` were defined as follows where `xsize` and `ysize` define the width and height of the picture in pixels and `offsetxpercent` defines how many pixels should be drawn around the transformed corners based on the original picture size:
+
+```python
+dstxmin = 0 + (xsize * offsetxpercent / 100)
+dstxmax = xsize - 1 - (xsize * offsetxpercent / 100)
+dstymin = 0 + (ysize * offsetypercent / 100)
+dstymax = ysize - 1 - (ysize * offsetypercent / 100)
+dst = np.float32([[dstxmin, dstymax], [dstxmin, dstymin], [dstxmax, dstymin], [dstxmax, dstymax]])
+```
+
+The perspective transform is used within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding`. It generates a birdseye view of the road which is then used to create a thresholded binary image of the lane lines.
+
+### iv. Identification of lane line polynomials
+
+The function `sliding_window_detect` in the notebook `180728d_StAn_AdvLaneFinding` looks for the start of lane lines in the lower left and right areas of the thresholded binary image of white and yellow lane lines. After this it follows the lane lines using a sliding window algorithm and stores the main line point for each window as shown in the following picture:
+
+![alt text][image5]
+
+At the end it estimates the shape of the lane lines by fitting a polynomial through the detected line points. The resulting polynomials for left, right and all lane lines are then used in a mask that is transferred back to the original perspective and blended into the original image as shown in the following picture:
+
+![alt text][image6]
+
+This function is used within the function `process_video_frame` in the notebook `180728d_StAn_AdvLaneFinding` and can either be called to reuse a previous polynomial to define the location of the sliding windows, to reuse the last starting positions of the lowest windows or to start without any previous information.
+
+### v. Calculation of curvature and off center position
+
+The calculation of lateral curvature of the lane `NewAllLines.radius_of_curvature` and off center position of the vehicle within the lane `potentialoffcenter` are done within the `sliding_window_detect` function in the notebook `180728d_StAn_AdvLaneFinding`.
+
+The curvature `NewAllLines.radius_of_curvature` is calculated using the following code where `all_curverad` is a vector containing the curvature at different vertical positions, `all_line_poly` is the polynomial of the average lane line, `line_y` are the vertical positions considered and `ym_per_pix` is the factor between pixels and meters:
+
+```python
+all_curverad = ((1 + (2 * all_line_poly[0] * line_y * ym_per_pix
+               + all_line_poly[1])**2)**1.5) / np.absolute(2 * all_line_poly[0])
+
+NewAllLines.radius_of_curvature = np.average(all_curverad)
+```
+
+The off center position of the vehicle within the lane `potentialoffcenter` is calculated using the following code where `xsize` is the width of the image and `xpeak_right` and `xpeak_left` mark the starting positions of the right and left lane lines at the bottom.
+
+```python
+potentialoffcenter = ((xsize - xpeak_right) - (xpeak_left - 0))
+```
+
+The value of `potentialoffcenter` is stored in `offcenter` and `NewAllLines.line_base_pos` if the algorithm successfully detected lane lines. The following code is used to plot the string `text` containing the off center position in meters using the conversion `xm_per_pix`:
+
+```python
+text = 'Lateral offset in m: ' + str((np.int(offcenter * xm_per_pix * 100) / 100))
+```
+
+The horizontal and vertical ratios between pixels and meters `xm_per_pix` and `ym_per_pix` are manually determined in the function `pixels2realworld` in the notebook `180728d_StAn_AdvLaneFinding`.
+
+---
+
+## 3. Pipeline (video)
+
+Here's a [link to my video result](./output_images/output.mp4)
+
+---
+
+## 4. Discussion
+
+The selection of the best parameters to detect white and yellow lane lines was challenging, because they had to work reasonably well under varying conditions like shaded areas. Features like shaded concrete walls on the side of the lane were easily mistaken for lane lines due to the high contrast. The same accounts for any other patches on the road that extend in longitudinal direction.
+
+Highly illumiated sections or sections with no good visible lane lines at all were challenging. Taking the running average of the lane lines rather than the detected lane lines directly helped to smooth out some of these situations.
+
+Extremely curvy roads are too challenging for my current algorithm, because it assumes that lane lines mostly extend to the front. Also, the image quality and view of the camera is not good enough for these situations. Additional camera pictures looking to the left and right side could be merged with the forward facing camera to give a better field of view and with this allow a better prediction with a slightly adjusted algorithm that allows sliding windows to move more in lateral direction.
