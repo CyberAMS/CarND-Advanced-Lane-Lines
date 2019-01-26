@@ -156,3 +156,5 @@ The selection of the best parameters to detect white and yellow lane lines was c
 Highly illumiated sections or sections with no good visible lane lines at all were challenging. Taking the running average of the lane lines rather than the detected lane lines directly helped to smooth out some of these situations.
 
 Extremely curvy roads are too challenging for my current algorithm, because it assumes that lane lines mostly extend to the front. Also, the image quality and view of the camera is not good enough for these situations. Additional camera pictures looking to the left and right side could be merged with the forward facing camera to give a better field of view and with this allow a better prediction with a slightly adjusted algorithm that allows sliding windows to move more in lateral direction.
+
+A more simple approach to mark lane lines is shown in the [Finding Lane Lines](https://github.com/CyberAMS/CarND-LaneLines-P1) project.
